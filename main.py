@@ -1,34 +1,39 @@
-from face_authentication.config.database import MongodbClient
-import pandas as pd, numpy as np
-from face_authentication.entity.user import User
-from face_authentication.data_access.user_data import UserData
-from face_authentication.data_access.user_embedding_data import UserEmbeddingData
-from face_authentication.entity.user_embedding import Embedding
+import os
+import uvicorn
+from fastapi import FastAPI, Response
+from fastapi.templating import Jinja2Templates
+from starlette import status
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import RedirectResponse
+from starlette.staticfiles import StaticFiles
 
-def main():
-    Name = "Ayush"
-    username = "hsiuahduio"
-    password = "hjshdaghjkdha"
-    password2 = "hjshdaghjkdha"
-    email_id = 'aysuiaghs'
-    ph_no = "275w382563"
-    user_data1 = User(
-Name,
-username,
-email_id,
-ph_no,
-password,
-password2
-)
-    
-    ud = UserData()
-    ud.save_user(user_data1)
+from controller.app_controller import application
+from controller.auth_controller import authentication
 
-    embed_list = list(np.zeros([128, ]))
-    uuid = "jhksagdjaisghdiuahsdio"
-    embed = Embedding(uuid, embed_list)
-    UserEmbeddingData().save_user_embedding(embed)
+app = FastAPI()
+app.mount("/static", StaticFiles(directory='static'), name="static")
+
+templates = Jinja2Templates(directory= os.path.join(os.getcwd(), "templates"))
 
 
-if __name__ == '__main__':
-    main()
+@app.get("/")
+def read_root():
+    try:
+        return RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
+    except Exception as e:
+        return templates.TemplateResponse("error.html", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@app.get("/test")
+def test_route():
+    return Response("Testing CI-CD")
+
+
+app.include_router(authentication.router)
+
+app.include_router(application.router)
+
+app.add_middleware(SessionMiddleware, secret_key="!secret")
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000, debug=True)

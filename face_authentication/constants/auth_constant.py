@@ -1,4 +1,4 @@
-from face_auth.utils.util import CommonUtils
+from face_authentication.utils.util import CommonUtils
 
 
 SECRET_KEY = CommonUtils().get_environment_variable("SECRET_KEY")
